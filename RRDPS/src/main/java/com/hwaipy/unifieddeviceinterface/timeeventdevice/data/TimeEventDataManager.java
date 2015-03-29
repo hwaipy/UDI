@@ -18,7 +18,7 @@ import org.joda.time.format.DateTimeFormatter;
  */
 public class TimeEventDataManager {
 
-    private static final String MappingFilesRoot = "TimeEventMappingFiles";
+    private static final String MappingFilesRoot = "./input-output/TimeEventMappingFiles";
     private static final String suffix = "TimeEventMapping";
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern("YYYY.MM.dd HH.mm.ss.SSS");
 
