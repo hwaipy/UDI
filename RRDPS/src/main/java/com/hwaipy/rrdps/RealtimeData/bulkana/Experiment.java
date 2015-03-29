@@ -42,6 +42,7 @@ public class Experiment {
   private byte mask = (byte) 0xff;
   private ArrayList<DecodingRandom> BobQRNGList;
   private File FineTimeCalibrateFile = new File("FineTimeCalibrateFile-13.txt");
+  private com.hwaipy.rrdps.RealtimeData.bulkana.totext.PhaseLockingResultSet phaseLockingResultSet;
 
   public Experiment(String id, File path) {
     this.id = id;
@@ -125,7 +126,7 @@ public class Experiment {
     Tagger tagger = new Tagger(getBobRandomList(), apdList, gate);
     ArrayList<Tagger.Entry> tags = tagger.tag();
 
-    Decoder decoder = new Decoder(tags, aliceRandomList, getBobRandomList());
+    Decoder decoder = new Decoder(tags, aliceRandomList, getBobRandomList(), phaseLockingResultSet);
     ArrayList<Decoder.Entry> result = decoder.decode();
     return result;
   }
@@ -146,18 +147,15 @@ public class Experiment {
         }
         if (apdIterator.hasNext()) {
           apdEvent = apdIterator.next();
-        }
-        else {
+        } else {
           apdEvent = null;
         }
-      }
-      else {
+      } else {
         if (syncIterator.hasNext()) {
           syncEvent = syncIterator.next();
           startTime = syncEvent.getTime() - before;
           endTime = syncEvent.getTime() + after;
-        }
-        else {
+        } else {
           syncEvent = null;
         }
       }
@@ -188,8 +186,7 @@ public class Experiment {
       for (int i = 0; i < 128; i++) {
         if (((b[(i / 8)] >>> (7 - (i % 8))) & 0x01) == 0x01) {
           randomList[i] = 0;
-        }
-        else {
+        } else {
           randomList[i] = 1;
         }
       }
@@ -220,8 +217,7 @@ public class Experiment {
       for (int i = 0; i < 7; i++) {
         if ((((R & mask) >>> i) & 0x01) == 0x01) {
           RrandomList[i] = 1;
-        }
-        else {
+        } else {
           RrandomList[i] = 0;
         }
       }
@@ -256,8 +252,7 @@ public class Experiment {
       TimeEvent timeEvent;
       if (iterator.hasNext()) {
         timeEvent = iterator.next();
-      }
-      else {
+      } else {
         throw new RuntimeException();
       }
       ExtandedTimeEvent<T> ete = new ExtandedTimeEvent<>(timeEvent.getTime(), timeEvent.getChannel(), random);
@@ -324,8 +319,7 @@ public class Experiment {
       TimeEvent next = iterator.next();
       if (next.getTime() < t) {
         System.out.println("wrong");
-      }
-      else {
+      } else {
         t = next.getTime();
       }
     }

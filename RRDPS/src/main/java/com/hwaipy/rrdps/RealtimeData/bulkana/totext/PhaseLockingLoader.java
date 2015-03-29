@@ -5,7 +5,6 @@
  */
 package com.hwaipy.rrdps.RealtimeData.bulkana.totext;
 
-import com.hwaipy.rrdps.ana.PhaseLockAnalysis;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,10 +19,9 @@ import java.util.Arrays;
  */
 public class PhaseLockingLoader {
 
-  public PhaseLockingResultSet load(File file) throws IOException {
+  public static PhaseLockingResultSet load(File file) throws IOException {
     PhaseLockingLoader phaseLockingLoader = new PhaseLockingLoader(file);
-    phaseLockingLoader.parse();
-    return null;
+    return phaseLockingLoader.parse();
   }
   private final File file;
 
@@ -31,7 +29,7 @@ public class PhaseLockingLoader {
     this.file = file;
   }
 
-  private void parse() throws IOException {
+  private PhaseLockingResultSet parse() throws IOException {
     BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
     while (true) {
       String line = reader.readLine();
@@ -40,11 +38,10 @@ public class PhaseLockingLoader {
       }
       feed(line);
     }
-//    ana();
-//    outputEveryResult();
+    return new PhaseLockingResultSet(results);
   }
 
-  private boolean firstLine = false;
+  private boolean firstLine = true;
 
   private void feed(String line) {
     String[] split = line.split(",");
@@ -52,7 +49,7 @@ public class PhaseLockingLoader {
       firstLine = false;
       feed(1, Integer.parseInt(split[6]));
     } else {
-      feed(Integer.parseInt(split[1]), Integer.parseInt(split[4]));
+      feed(Integer.parseInt(split[0]), Integer.parseInt(split[3]));
     }
   }
 
@@ -75,7 +72,7 @@ public class PhaseLockingLoader {
   }
 
   public static void main(String[] args) throws IOException {
-    new PhaseLockAnalysis(new File("/Users/Hwaipy/Downloads/20150328012435-R-APD2-018_稳相数据.csv")).parse();
+    load(new File("E:\\Experiments\\RRDPS\\采数\\20150325\\原始数据-原始数据解析\\20150324215356-R-APD2-034_稳相数据.csv"));
   }
 
   private void ana() {

@@ -28,9 +28,9 @@ public class Process {
     ArrayList<Decoder.Entry> result = experiment.decoding(400);
     System.out.println("decode finshed!");
     ResultParser resultParser = new ResultParser(result);
-    resultParser.ResultOutFile(result, id);
+    resultParser.ResultOutFile();
 //    resultParser.ResultStatistics(result, id);
-    resultParser.ResultbyGate(result, experiment.getBobQRNGList(), id);
+    resultParser.ResultbyGate(experiment.getBobQRNGList());
     experiment.test();
 
   }

@@ -5,6 +5,7 @@
  */
 package com.hwaipy.rrdps.RealtimeData.bulkana;
 
+import com.hwaipy.unifieddeviceinterface.DeviceException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -65,7 +66,7 @@ public class AutoRun {
       int[] statisticDelays = experiment.statisticDelay(600);
       ArrayList<Decoder.Entry> result = experiment.decoding(2000);
       ResultParser resultParser = new ResultParser(result);
-      resultParser.ResultOutFile(result, null);
+      resultParser.ResultOutFile();
       ResultSet resultSet = new ResultSet(GlobalResult.take());
       double miu = resultSet.getMiu();
       int roundCount = resultSet.getRoundCount();
@@ -80,14 +81,14 @@ public class AutoRun {
       experiment.filterAndMerge(1000, 258000);
       result = experiment.decoding(600);
       resultParser = new ResultParser(result);
-      resultParser.ResultOutFile(result, null);
-      resultParser.ResultbyGate(result, experiment.getBobQRNGList(), null);
+      resultParser.ResultOutFile();
+      resultParser.ResultbyGate(experiment.getBobQRNGList());
       ResultSet optimalResultSet = new ResultSet(GlobalResult.take());
       String rs2 = optimalResultSet.getRatio() + "\t" + optimalResultSet.getCountsByDelay();
       System.out.println(optimalResultSet.getRatio());
       String rs = rs1 + rs2;
       return rs;
-    } catch (Exception ex) {
+    } catch (IOException | DeviceException | RuntimeException ex) {
       String e = index + "\t" + id + "\tException:" + ex;
       System.out.println(e);
 //      ex.printStackTrace();
@@ -103,8 +104,8 @@ public class AutoRun {
     experiment.filterAndMerge(1000, 258000);
     ArrayList<Decoder.Entry> result = experiment.decoding(gate);
     ResultParser resultParser = new ResultParser(result);
-    resultParser.ResultOutFile(result, null);
-    resultParser.ResultbyGate(result, experiment.getBobQRNGList(), null);
+    resultParser.ResultOutFile();
+    resultParser.ResultbyGate(experiment.getBobQRNGList());
     return new ResultSet(GlobalResult.take());
   }
 

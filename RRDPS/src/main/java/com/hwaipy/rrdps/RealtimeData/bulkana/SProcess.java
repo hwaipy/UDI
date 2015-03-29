@@ -104,8 +104,8 @@ public class SProcess {
     experiment.filterAndMerge(1000, 258000);
     ArrayList<Decoder.Entry> result = experiment.decoding(gate);
     ResultParser resultParser = new ResultParser(result);
-    resultParser.ResultOutFile(result, null);
-    resultParser.ResultbyGate(result, experiment.getBobQRNGList(), null);
+    resultParser.ResultOutFile();
+    resultParser.ResultbyGate(experiment.getBobQRNGList());
     return new ResultSet(GlobalResult.take());
   }
 

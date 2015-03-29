@@ -3,14 +3,15 @@ package com.hwaipy.rrdps.RealtimeData.bulkana.totext;
 import com.hwaipy.rrdps.RealtimeData.bulkana.*;
 import com.hwaipy.unifieddeviceinterface.DeviceException;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.RandomAccessFile;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 
 /**
  *
@@ -20,10 +21,11 @@ public class TProcess {
 
   public static void main(String[] args) throws IOException {
     File path = new File("E:/Experiments/RRDPS/采数/20150325/原始数据-原始数据解析/");
+    File resultPath = new File("E:/Experiments/RRDPS/采数/20150325/result/");
     File listFile = new File(path, "原始数据解析文件列表.csv");
     long delay1 = 192940600;
     long delay2 = 192935000;
-    TProcess tProcess = new TProcess(path, listFile, delay1, delay2);
+    TProcess tProcess = new TProcess(path, listFile, delay1, delay2, resultPath);
     tProcess.parse(3, 4);
   }
 
@@ -31,8 +33,9 @@ public class TProcess {
   private final File path;
   private final long delay1;
   private final long delay2;
+  private final File resultPath;
 
-  public TProcess(File path, File listFile, long delay1, long delay2) throws IOException {
+  public TProcess(File path, File listFile, long delay1, long delay2, File resultPath) throws IOException {
     this.path = path;
     this.delay1 = delay1;
     this.delay2 = delay2;
@@ -45,24 +48,24 @@ public class TProcess {
       String[] fileNames = line.split(",");
       fileList.add(fileNames);
     }
-  }
-
-  private void parse(int from, int to) throws IOException {
-    try (RandomAccessFile raf = new RandomAccessFile("./input-output/output_" + from + "-" + to + ".csv", "rw")) {
-      for (int index = from; index < to; index++) {
-        String result = parse(index);
-        raf.seek(raf.length());
-        raf.write((result + System.lineSeparator()).getBytes("UTF-8"));
-      }
+    this.resultPath = resultPath;
+    if (!resultPath.exists()) {
+      resultPath.mkdirs();
     }
   }
 
-  private String parse(int index) {
-    String[] fileNames = fileList.get(index);
-    return parse(path, fileNames);
+  private void parse(int from, int to) throws IOException {
+    for (int index = from; index < to; index++) {
+      parse(index);
+    }
   }
 
-  private String parse(File path, String[] files) {
+  private void parse(int index) {
+    String[] fileNames = fileList.get(index);
+    parse(path, fileNames);
+  }
+
+  private void parse(File path, String[] files) {
     String id = files[0].substring(0, 14);
     String index = files[0].substring(17, 20);
     ArrayList<String> fileNames = new ArrayList<>();
@@ -77,7 +80,7 @@ public class TProcess {
       int[] statisticDelays = experiment.statisticDelay(600);
       ArrayList<Decoder.Entry> result = experiment.decoding(2000);
       ResultParser resultParser = new ResultParser(result);
-      resultParser.ResultOutFile(result, null);
+      resultParser.ResultOutFile();
       ResultSet resultSet = new ResultSet(GlobalResult.take());
       double miu = resultSet.getMiu();
       int roundCount = resultSet.getRoundCount();
@@ -92,18 +95,24 @@ public class TProcess {
       experiment.filterAndMerge(1000, 258000);
       result = experiment.decoding(600);
       resultParser = new ResultParser(result);
-      resultParser.ResultOutFile(result, null);
-      resultParser.ResultbyGate(result, experiment.getBobQRNGList(), null);
+      resultParser.ResultOutFile();
+      resultParser.ResultbyGate(experiment.getBobQRNGList());
       ResultSet optimalResultSet = new ResultSet(GlobalResult.take());
-      String rs2 = optimalResultSet.getRatio() + "\t" + optimalResultSet.getCountsByDelay();
+//      String rs2 = optimalResultSet.getRatio() + "\t" + optimalResultSet.getCountsByDelay();
+      String rs2 = optimalResultSet.getRatio() + "";
       System.out.println(rs2);
-      String rs = rs1 + rs2;
-      return rs;
+      String r = new ToTextResultSet(result).toTextResult();
+      File resultFile = new File(resultPath, id + "-" + index + ".csv");
+      try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(resultFile), "UTF-8"), 10000000)) {
+        writer.write("GeneralDefinition,Index,ID,RoundCount,EventCount,BaseDelay1,BaseDelay2,RelativeDelay1,RelativeDelay2,Ratio\n");
+        writer.write("General," + index + "," + id + "," + roundCount + "," + eventCount + "," + delay1 + "," + delay2 + "," + statisticDelays[0] + "," + statisticDelays[1] + "," + optimalResultSet.getRatio() + "\n");
+        writer.write(experiment.getPhaseLockingResultSet().toTextResult());
+        writer.write(r);
+      }
     } catch (IOException | DeviceException | RuntimeException ex) {
       String e = index + "\t" + id + "\tException:" + ex;
       System.out.println(e);
 //      ex.printStackTrace();
-      return e;
     }
   }
 

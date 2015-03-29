@@ -9,17 +9,11 @@ import com.hwaipy.unifieddeviceinterface.timeeventdevice.pxi40ps1data.PXI40PS1Lo
 import com.hwaipy.unifieddeviceinterface.timeeventdevice.timeeventcontainer.StreamTimeEventList;
 import com.hwaipy.unifieddeviceinterface.timeeventdevice.timeeventcontainer.TimeEventList;
 import com.hwaipy.unifieddeviceinterface.timeeventdevice.timeeventcontainer.TimeEventSegment;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 
 /**
  *
@@ -30,9 +24,7 @@ public class TExperiment {
   private static final boolean DEBUG = false;
   private static final int CHANNEL_APD1 = 2;
   private static final int CHANNEL_APD2 = 3;
-  private static final Map<String, String[]> FILENAME_MAP = new HashMap<>();
 
-  private String index;
   private final File path;
   private TimeEventList aliceRandomList;
   private TimeEventList bobRandomList;
@@ -43,6 +35,7 @@ public class TExperiment {
   private ArrayList<DecodingRandom> BobQRNGList;
   private final File FineTimeCalibrateFile = new File("./input-output/FineTimeCalibrateFile-13.txt");
   private final ArrayList<String> fileNames;
+  private PhaseLockingResultSet phaseLockingResultSet;
 
   public TExperiment(File path, ArrayList<String> fileNames) {
     this.path = path;
@@ -66,6 +59,7 @@ public class TExperiment {
     GlobalResult.push(Math.min(aliceQRNGList.size(), getBobRandomList().size()));
     apd1List = bobSegment.getEventList(CHANNEL_APD1);
     apd2List = bobSegment.getEventList(CHANNEL_APD2);
+    phaseLockingResultSet = loadPhaseLockerFile(phaseLockingFile);
   }
 
   public void sync(long delay1, long delay2) {
@@ -85,6 +79,9 @@ public class TExperiment {
     apdList = new MergedTimeEventList(apd1List, apd2List);
   }
 
+  public PhaseLockingResultSet getPhaseLockingResultSet() {
+    return phaseLockingResultSet;
+  }
   private static final int BIN_WIDTH = 50;
 
   public int[] statisticDelay(int gate) {
@@ -150,7 +147,7 @@ public class TExperiment {
   public ArrayList<Decoder.Entry> decoding(long gate) {
     Tagger tagger = new Tagger(getBobRandomList(), apdList, gate);
     ArrayList<Tagger.Entry> tags = tagger.tag();
-    Decoder decoder = new Decoder(tags, aliceRandomList, getBobRandomList());
+    Decoder decoder = new Decoder(tags, aliceRandomList, getBobRandomList(), phaseLockingResultSet);
     ArrayList<Decoder.Entry> result = decoder.decode();
     return result;
   }
@@ -221,7 +218,7 @@ public class TExperiment {
   private ArrayList<DecodingRandom> loadDecodingQRNGFile(File file, byte mask) throws IOException, DeviceException {
     FileInputStream input = new FileInputStream(file);
     int b;
-    b = input.read();//加20km光纤，延时100us,丢一个随机数。
+    input.read();//加20km光纤，延时100us,丢一个随机数。
     ArrayList<DecodingRandom> list = new ArrayList<>();
     while (true) {
       b = input.read();
@@ -240,7 +237,6 @@ public class TExperiment {
       }
       delaypulse[0] = (RrandomList[0] + RrandomList[1] * 2 + RrandomList[2] * 4 + RrandomList[3] * 8);
       delaypulse[1] = RrandomList[4] * 16 + RrandomList[5] * 32 + RrandomList[6] * 64;
-      //System.out.println( delaypulse[0]+"\t"+ delaypulse[1]);
       list.add(new DecodingRandom(delaypulse[0], delaypulse[1]));
     }
     return list;
@@ -278,48 +274,9 @@ public class TExperiment {
     return streamTimeEventList;
   }
 
-  public ArrayList<PhaseLockingResult> loadPhaseLockerFile(File plrFile, File pldFile) throws FileNotFoundException, IOException {
-    ArrayList<PhaseLockingResult> phaseLockingResultlist = new ArrayList<>();
-    BufferedReader plrReader = new BufferedReader(new InputStreamReader(new FileInputStream(plrFile), "GB2312"));
-    BufferedReader pldReader = new BufferedReader(new InputStreamReader(new FileInputStream(pldFile), "GB2312"));
-    while (true) {
-      String[] plrs = readLines(plrReader, 3);
-      String[] plds = readLines(pldReader, 24);
-      if (plrs == null || plds == null) {
-        break;
-      }
-      PhaseLockingResult phaseLockingResult = parse(plrs, plds);
-      phaseLockingResultlist.add(phaseLockingResult);
-    }
-    return phaseLockingResultlist;
-  }
-
-  private String[] readLines(BufferedReader reader, int count) throws IOException {
-    String[] results = new String[count];
-    for (int i = 0; i < count; i++) {
-      String line = reader.readLine();
-      if (line == null) {
-        return null;
-      }
-      results[i] = line;
-    }
-    return results;
-  }
-
-  private PhaseLockingResult parse(String[] plrs, String[] plds) {
-    String[] split1 = plrs[2].split(" *, *");
-    int plResult = Integer.parseInt(split1[6]);
-
-    int countAPD1 = 0;
-    int countAPD2 = 0;
-    for (String pld : plds) {
-      String[] split2 = pld.split(" *, *");
-      countAPD1 += Integer.parseInt(split2[3]);
-      countAPD2 += Integer.parseInt(split2[4]);
-    }
-    double plLarge = (countAPD1 + countAPD2) / 24.;
-//        System.out.println(plLarge / plResult);
-    return new PhaseLockingResult(plResult, plLarge);
+  public PhaseLockingResultSet loadPhaseLockerFile(File pldFile) throws IOException {
+    PhaseLockingResultSet resultSet = PhaseLockingLoader.load(pldFile);
+    return resultSet;
   }
 
   /**

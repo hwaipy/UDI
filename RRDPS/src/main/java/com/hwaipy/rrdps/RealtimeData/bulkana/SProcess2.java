@@ -61,7 +61,7 @@ public class SProcess2 {
       int[] statisticDelays = experiment.statisticDelay(600);
       ArrayList<Decoder.Entry> result = experiment.decoding(2000);
       ResultParser resultParser = new ResultParser(result);
-      resultParser.ResultOutFile(result, null);
+      resultParser.ResultOutFile();
       ResultSet resultSet = new ResultSet(GlobalResult.take());
       double miu = resultSet.getMiu();
       int roundCount = resultSet.getRoundCount();
@@ -76,8 +76,8 @@ public class SProcess2 {
       experiment.filterAndMerge(1000, 258000);
       result = experiment.decoding(600);
       resultParser = new ResultParser(result);
-      resultParser.ResultOutFile(result, null);
-      resultParser.ResultbyGate(result, experiment.getBobQRNGList(), null);
+      resultParser.ResultOutFile();
+      resultParser.ResultbyGate(experiment.getBobQRNGList());
       ResultSet optimalResultSet = new ResultSet(GlobalResult.take());
       String rs2 = optimalResultSet.getRatio() + "\t" + optimalResultSet.getCountsByDelay();
       System.out.println(rs2);
@@ -99,8 +99,8 @@ public class SProcess2 {
     experiment.filterAndMerge(1000, 258000);
     ArrayList<Decoder.Entry> result = experiment.decoding(gate);
     ResultParser resultParser = new ResultParser(result);
-    resultParser.ResultOutFile(result, null);
-    resultParser.ResultbyGate(result, experiment.getBobQRNGList(), null);
+    resultParser.ResultOutFile();
+    resultParser.ResultbyGate(experiment.getBobQRNGList());
     return new ResultSet(GlobalResult.take());
   }
 

@@ -110,17 +110,14 @@ public class SExperiment {
       long time = event.getTime();
       if (time < syncTime - 1000) {
         event = null;
-      }
-      else if (time > syncTime + 256000) {
+      } else if (time > syncTime + 256000) {
         syncEvent = null;
-      }
-      else {
+      } else {
         int deltaT = (int) (time - syncTime + 1000);
         int bin = (deltaT % 2000) / BIN_WIDTH;
         if (event.getChannel() == CHANNEL_APD1) {
           delay1[bin]++;
-        }
-        else {
+        } else {
           delay2[bin]++;
         }
         event = null;
@@ -151,7 +148,7 @@ public class SExperiment {
   public ArrayList<Decoder.Entry> decoding(long gate) {
     Tagger tagger = new Tagger(getBobRandomList(), apdList, gate);
     ArrayList<Tagger.Entry> tags = tagger.tag();
-    Decoder decoder = new Decoder(tags, aliceRandomList, getBobRandomList());
+    Decoder decoder = new Decoder(tags, aliceRandomList, getBobRandomList(), null);
     ArrayList<Decoder.Entry> result = decoder.decode();
     return result;
   }
@@ -172,18 +169,15 @@ public class SExperiment {
         }
         if (apdIterator.hasNext()) {
           apdEvent = apdIterator.next();
-        }
-        else {
+        } else {
           apdEvent = null;
         }
-      }
-      else {
+      } else {
         if (syncIterator.hasNext()) {
           syncEvent = syncIterator.next();
           startTime = syncEvent.getTime() - before;
           endTime = syncEvent.getTime() + after;
-        }
-        else {
+        } else {
           syncEvent = null;
         }
       }
@@ -212,8 +206,7 @@ public class SExperiment {
       for (int i = 0; i < 128; i++) {
         if (((b[(i / 8)] >>> (7 - (i % 8))) & 0x01) == 0x01) {
           randomList[i] = 0;
-        }
-        else {
+        } else {
           randomList[i] = 1;
         }
       }
@@ -239,8 +232,7 @@ public class SExperiment {
       for (int i = 0; i < 7; i++) {
         if ((((R & mask) >>> i) & 0x01) == 0x01) {
           RrandomList[i] = 1;
-        }
-        else {
+        } else {
           RrandomList[i] = 0;
         }
       }
@@ -275,8 +267,7 @@ public class SExperiment {
       TimeEvent timeEvent;
       if (iterator.hasNext()) {
         timeEvent = iterator.next();
-      }
-      else {
+      } else {
         throw new RuntimeException();
       }
       ExtandedTimeEvent<T> ete = new ExtandedTimeEvent<>(timeEvent.getTime(), timeEvent.getChannel(), random);

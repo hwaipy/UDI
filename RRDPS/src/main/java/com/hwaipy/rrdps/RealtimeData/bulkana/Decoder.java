@@ -13,11 +13,13 @@ public class Decoder {
   private final Collection<Tagger.Entry> tags;
   private final TimeEventList aliceQRNG;
   private final TimeEventList bobQRNG;
+  private final com.hwaipy.rrdps.RealtimeData.bulkana.totext.PhaseLockingResultSet phaseLockingResultSet;
 
-  public Decoder(Collection<Tagger.Entry> tags, TimeEventList aliceQRNG, TimeEventList bobQRNG) {
+  public Decoder(Collection<Tagger.Entry> tags, TimeEventList aliceQRNG, TimeEventList bobQRNG, com.hwaipy.rrdps.RealtimeData.bulkana.totext.PhaseLockingResultSet phaseLockingResultSet) {
     this.tags = tags;
     this.aliceQRNG = aliceQRNG;
     this.bobQRNG = bobQRNG;
+    this.phaseLockingResultSet = phaseLockingResultSet;
   }
 
   public ArrayList<Entry> decode() {
@@ -34,8 +36,9 @@ public class Decoder {
       DecodingRandom decodingRandom = ((ExtandedTimeEvent<DecodingRandom>) bobQRNG.get(roundIndex)).getProperty();
       int delay = decodingRandom.getDelay();
       int encode = encodingRandom.getEncode(pulseIndex, delay);
+      double phaseLockingError = phaseLockingResultSet.getPhaseLockingErrorRate(apdtime, delay);
       if (encode >= 0) {
-        Entry entry = new Entry(roundIndex, pulseIndex, encode, decode, apdtime);
+        Entry entry = new Entry(roundIndex, pulseIndex, encode, decode, delay, apdtime, phaseLockingError);
         result.add(entry);
       }
     }
@@ -48,14 +51,18 @@ public class Decoder {
     private final int pulseIndex;
     private final int encode;
     private final int decode;
+    private final int delay;
     private final long APDTime;
+    private final double phaseLockingError;
 
-    private Entry(int roundIndex, int pulseIndex, int encode, int decode, long APDTime) {
+    private Entry(int roundIndex, int pulseIndex, int encode, int decode, int delay, long APDTime, double phaseLockingError) {
       this.roundIndex = roundIndex;
       this.pulseIndex = pulseIndex;
       this.encode = encode;
       this.decode = decode;
+      this.delay = delay;
       this.APDTime = APDTime;
+      this.phaseLockingError = phaseLockingError;
     }
 
     public int getRoundIndex() {
@@ -74,11 +81,16 @@ public class Decoder {
       return decode;
     }
 
-    /**
-     * @return the APDTime
-     */
+    public int getDelay() {
+      return delay;
+    }
+
     public long getAPDTime() {
       return APDTime;
+    }
+
+    public double getPhaseLockingError() {
+      return phaseLockingError;
     }
 
   }
