@@ -107,7 +107,8 @@ public class InterferenceAna {
 
   public static void main(String[] args) throws IOException {
 //    new InterferenceAna(new File("/Volumes/HITACHI/data/0325-原始数据解析/20150324201115-R-APD2-001_稳相数据.csv")).parse();
-    new InterferenceAna(new File("/Users/Hwaipy/Downloads/20150328005546-R-APD2-012_稳相数据.csv")).parse();
+//    new InterferenceAna(new File("/Users/Hwaipy/Downloads/20150328005546-R-APD2-012_稳相数据.csv")).parse();
+    new InterferenceAna(new File("D:/FileExchange/Working/20150328003321-R-APD2-004_稳相数据.csv")).parse();
   }
 
 }

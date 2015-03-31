@@ -17,6 +17,10 @@ public class Result {
 
   private final ArrayList<Entry> entries = new ArrayList<>();
   private double ratio = 0;
+  private int eventCount2000;
+  private int roundCount;
+  private String index;
+  private String id;
 
   public Result(File file) throws IOException {
     BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
@@ -25,6 +29,22 @@ public class Result {
 
   public double getRatio() {
     return ratio;
+  }
+
+  public int getEventCount2000() {
+    return eventCount2000;
+  }
+
+  public String getIndex() {
+    return index;
+  }
+
+  public String getId() {
+    return id;
+  }
+
+  public int getRoundCount() {
+    return roundCount;
   }
 
   public Collection<Entry> getEntries() {
@@ -41,6 +61,10 @@ public class Result {
       switch (split[0]) {
         case "General":
           ratio = Double.parseDouble(split[9]);
+          eventCount2000 = Integer.parseInt(split[4]);
+          index = split[1];
+          id = split[2];
+          roundCount = Integer.parseInt(split[3]);
           break;
         case "Event":
           Entry entry = new Entry(Integer.parseInt(split[1]), Integer.parseInt(split[2]),

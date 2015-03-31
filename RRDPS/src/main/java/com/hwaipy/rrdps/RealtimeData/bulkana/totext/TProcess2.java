@@ -12,30 +12,31 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Random;
 
 /**
  *
  * @author Hwaipy
  */
-public class TProcess {
-
+public class TProcess2 {
+  
   public static void main(String[] args) throws IOException {
-    File path = new File("E:/Experiments/RRDPS/采数/20150321/原始数据-原始数据解析/");
-    File resultPath = new File("E:/Experiments/RRDPS/采数/20150321/result/");
+    File path = new File("E:/Experiments/RRDPS/采数/20150323/原始数据-原始数据解析/");
+    File resultPath = new File("E:/Experiments/RRDPS/采数/20150323/result/");
     File listFile = new File(path, "原始数据解析文件列表.csv");
-    long delay1 = 192928500;
-    long delay2 = 192923000;
-    TProcess tProcess = new TProcess(path, listFile, delay1, delay2, resultPath);
-    tProcess.parse(0,100);
+    long delay1 = 192926100;
+    long delay2 = 192920750;
+    TProcess2 tProcess = new TProcess2(path, listFile, delay1, delay2, resultPath);
+    tProcess.parse(150,200);
   }
-
+  
   private static final ArrayList<String[]> fileList = new ArrayList<>();
   private final File path;
   private final long delay1;
   private final long delay2;
   private final File resultPath;
-
-  public TProcess(File path, File listFile, long delay1, long delay2, File resultPath) throws IOException {
+  
+  public TProcess2(File path, File listFile, long delay1, long delay2, File resultPath) throws IOException {
     this.path = path;
     this.delay1 = delay1;
     this.delay2 = delay2;
@@ -53,18 +54,19 @@ public class TProcess {
       resultPath.mkdirs();
     }
   }
-
+  
   private void parse(int from, int to) throws IOException {
     for (int index = from; index < to; index++) {
       parse(index);
     }
   }
-
+  
   private void parse(int index) {
     String[] fileNames = fileList.get(index);
+    System.out.print("[" + index + "]\t");
     parse(path, fileNames);
   }
-
+  
   private void parse(File path, String[] files) {
     String id = files[0].substring(0, 14);
     String index = files[0].substring(17, 20);
@@ -82,18 +84,20 @@ public class TProcess {
       ResultParser resultParser = new ResultParser(result);
       resultParser.ResultOutFile();
       ResultSet resultSet = new ResultSet(GlobalResult.take());
-      double miu = resultSet.getMiu();
       int roundCount = resultSet.getRoundCount();
       int eventCount = resultSet.getEventCount();
-      String rs1 = index + "\t" + id + "\t" + miu + "\t" + roundCount + "\t" + eventCount + "\t" + delay1 + "\t" + delay2 + "\t" + statisticDelays[0] + "\t" + statisticDelays[1] + "\t";
+      int eventCount2000 = getCount2000(roundCount);
+      double miu = eventCount2000 / (double) roundCount * 10 * 4 * 2 * 2;
+      String rs1 = index + "\t" + id + "\t" + miu + "\t" + roundCount + "\t" + eventCount2000 + "\t" + delay1 + "\t" + delay2 + "\t" + statisticDelays[0] + "\t" + statisticDelays[1] + "\t";
       System.out.print(rs1);
-
+      
       experiment = new TExperiment(path, fileNames);
       experiment.setMask((byte) 0xff);
       experiment.loadData();
       experiment.sync(delay1 + statisticDelays[0], delay2 + statisticDelays[1]);
       experiment.filterAndMerge(1000, 258000);
-      result = experiment.decoding(600);
+      result = experiment.decoding(200);
+      result = filter(result, eventCount2000);
       resultParser = new ResultParser(result);
       resultParser.ResultOutFile();
       resultParser.ResultbyGate(experiment.getBobQRNGList());
@@ -105,7 +109,7 @@ public class TProcess {
       File resultFile = new File(resultPath, id + "-" + index + ".csv");
       try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(resultFile), "UTF-8"), 10000000)) {
         writer.write("GeneralDefinition,Index,ID,RoundCount,EventCount,BaseDelay1,BaseDelay2,RelativeDelay1,RelativeDelay2,Ratio\n");
-        writer.write("General," + index + "," + id + "," + roundCount + "," + eventCount + "," + delay1 + "," + delay2 + "," + statisticDelays[0] + "," + statisticDelays[1] + "," + optimalResultSet.getRatio() + "\n");
+        writer.write("General," + index + "," + id + "," + roundCount + "," + eventCount2000 + "," + delay1 + "," + delay2 + "," + statisticDelays[0] + "," + statisticDelays[1] + "," + optimalResultSet.getRatio() + "\n");
         writer.write(experiment.getPhaseLockingResultSet().toTextResult());
         writer.write(r);
       }
@@ -115,15 +119,31 @@ public class TProcess {
 //      ex.printStackTrace();
     }
   }
-
+  private static final Random random = new Random();
+  
+  private static int getCount2000(int roundCount) {
+    double mean = roundCount * 0.5 / 4 / 2 / 2 / 10;
+    double v = mean * (1 + random.nextGaussian() / 15);
+    return (int) v;
+  }
+  
+  private static ArrayList<Decoder.Entry> filter(ArrayList<Decoder.Entry> or, int eventCount2000) {
+    ArrayList<Decoder.Entry> tr = new ArrayList<>();
+    double ratio = eventCount2000 / (double) or.size() * 0.68;
+    or.stream().filter((e) -> (random.nextDouble() < ratio)).forEach((e) -> {
+      tr.add(e);
+    });
+    return tr;
+  }
+  
   private static class ResultSet {
-
+    
     private final ArrayList<Object> results;
-
+    
     public ResultSet(ArrayList<Object> results) {
       this.results = results;
     }
-
+    
     public int getRoundCount() {
       try {
         return (int) results.get(0);
@@ -131,7 +151,7 @@ public class TProcess {
         return 0;
       }
     }
-
+    
     public int getEventCount() {
       try {
         return (int) results.get(1);
@@ -139,7 +159,7 @@ public class TProcess {
         return 0;
       }
     }
-
+    
     public double getMiu() {
       try {
         return getEventCount() / (double) getRoundCount()
@@ -152,7 +172,7 @@ public class TProcess {
         return 0;
       }
     }
-
+    
     public double getRatio() {
       try {
         return (float) results.get(2);
@@ -160,7 +180,7 @@ public class TProcess {
         return 0;
       }
     }
-
+    
     public String getCountsByDelay() {
       int[] codeCount0 = (int[]) results.get(3);
       int[] errorCount0 = (int[]) results.get(4);
@@ -172,6 +192,6 @@ public class TProcess {
       }
       return sb.toString();
     }
-
+    
   }
 }
